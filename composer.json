@@ -7,7 +7,7 @@
     "email": "sztyup@gmail.com"
   }],
   "require": {
-    "php": ">=7.0",
+    "php": ">=7.1",
     "illuminate/support": "^5.7",
     "laravel/socialite": "^3.2"
   },
