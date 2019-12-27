@@ -22,7 +22,7 @@
   "minimum-stability": "stable",
   "autoload": {
     "psr-4": {
-      "Sztyup\\LAuth": "src/LAuth"
+      "Sztyup\\LAuth\\": "src/LAuth"
     }
   },
   "autoload-dev": {
