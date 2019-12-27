@@ -33,7 +33,7 @@
   "extra": {
     "laravel": {
       "providers": [
-        "Sztyup\\Lauth\\LAuthServiceProvider"
+        "Sztyup\\LAuth\\LAuthServiceProvider"
       ]
     }
   }
