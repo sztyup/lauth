@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Sztyup\Lauth;
+namespace Sztyup\LAuth;
 
 use Doctrine\Common\Persistence\ObjectRepository;
 use GuzzleHttp\Client;
@@ -10,7 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use RuntimeException;
-use Sztyup\Lauth\Entities\Account;
+use Sztyup\LAuth\Entities\Account;
 
 abstract class AbstractProvider implements ProviderInterface
 {

@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Sztyup\Lauth;
+namespace Sztyup\LAuth;
 
 use Doctrine\ORM\EntityManager;
 use Illuminate\Auth\AuthManager;
@@ -9,10 +9,10 @@ use Illuminate\Contracts\Config\Repository;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Contracts\Events\Dispatcher;
-use Sztyup\Lauth\Entities\Account;
-use Sztyup\Lauth\Entities\User;
-use Sztyup\Lauth\Events\Login;
-use Sztyup\Lauth\Exceptions\ProviderNotFound;
+use Sztyup\LAuth\Entities\Account;
+use Sztyup\LAuth\Entities\User;
+use Sztyup\LAuth\Events\Login;
+use Sztyup\LAuth\Exceptions\ProviderNotFound;
 
 class LAuth
 {

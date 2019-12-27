@@ -1,11 +1,11 @@
 <?php
 declare(strict_types=1);
 
-namespace Sztyup\Lauth;
+namespace Sztyup\LAuth;
 
 use Doctrine\Common\Collections\ArrayCollection;
 use Illuminate\Contracts\Auth\Authenticatable;
-use Sztyup\Lauth\Entities\Account;
+use Sztyup\LAuth\Entities\Account;
 
 interface UserInterface extends Authenticatable
 {

@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Sztyup\Lauth\Entities;
+namespace Sztyup\LAuth\Entities;
 
 use Doctrine\ORM\Mapping as ORM;
 

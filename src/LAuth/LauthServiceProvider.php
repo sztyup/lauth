@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Sztyup\Lauth;
+namespace Sztyup\LAuth;
 
 use Illuminate\Support\ServiceProvider;
 use LaravelDoctrine\ORM\DoctrineManager;

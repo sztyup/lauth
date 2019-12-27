@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Sztyup\Lauth\Exceptions;
+namespace Sztyup\LAuth\Exceptions;
 
 use Exception;
 

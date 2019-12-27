@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-namespace Sztyup\Lauth;
+namespace Sztyup\LAuth;
 
 use Illuminate\Http\RedirectResponse;
-use Sztyup\Lauth\Entities\Account;
+use Sztyup\LAuth\Entities\Account;
 
 interface ProviderInterface
 {

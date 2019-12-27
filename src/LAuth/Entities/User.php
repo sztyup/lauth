@@ -1,11 +1,11 @@
 <?php
 declare(strict_types=1);
 
-namespace Sztyup\Lauth\Entities;
+namespace Sztyup\LAuth\Entities;
 
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
-use Sztyup\Lauth\UserInterface;
+use Sztyup\LAuth\UserInterface;
 
 class User implements UserInterface
 {

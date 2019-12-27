@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-namespace Sztyup\Lauth\Events;
+namespace Sztyup\LAuth\Events;
 
-use Sztyup\Lauth\ProviderUser;
-use Sztyup\Lauth\UserInterface;
+use Sztyup\LAuth\ProviderUser;
+use Sztyup\LAuth\UserInterface;
 
 class Login
 {
