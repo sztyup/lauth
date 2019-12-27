@@ -9,8 +9,8 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
-use RuntimeException;
 use Sztyup\LAuth\Entities\Account;
+use Sztyup\LAuth\Exceptions\InvalidStateException;
 
 abstract class AbstractProvider implements ProviderInterface
 {
@@ -47,13 +47,16 @@ abstract class AbstractProvider implements ProviderInterface
 
     abstract protected function redirectUrl(string $state): string;
 
+    /**
+     * @throws InvalidStateException
+     */
     protected function checkState(): void
     {
         $expected = $this->request->session()->pull('state');
         $given = $this->request->query->get('state');
 
         if ($expected !== $given) {
-            throw new RuntimeException(sprintf('Expected state "%s", got "%s"', $expected, $given));
+            throw new InvalidStateException($expected, $given);
         }
     }
 
@@ -92,6 +95,9 @@ abstract class AbstractProvider implements ProviderInterface
         return RedirectResponse::create($this->redirectUrl($state));
     }
 
+    /**
+     * @throws InvalidStateException
+     */
     public function callback(): ProviderUser
     {
         $this->checkState();

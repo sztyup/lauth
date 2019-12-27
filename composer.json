@@ -7,7 +7,7 @@
     "email": "sztyup@gmail.com"
   }],
   "require": {
-    "php": ">=7.1",
+    "php": ">=7.2",
     "ext-json": "*",
     "guzzlehttp/guzzle": "6.3.*",
     "illuminate/support": "^6.9",
@@ -33,7 +33,7 @@
   "extra": {
     "laravel": {
       "providers": [
-        "Sztyup\\Lauth\\LauthServiceProvider"
+        "Sztyup\\Lauth\\LAuthServiceProvider"
       ]
     }
   }
