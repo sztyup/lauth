@@ -6,7 +6,7 @@ namespace Sztyup\LAuth;
 use Illuminate\Support\ServiceProvider;
 use LaravelDoctrine\ORM\DoctrineManager;
 
-class LauthServiceProvider extends ServiceProvider
+class LAuthServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
