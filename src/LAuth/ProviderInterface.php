@@ -12,11 +12,7 @@ interface ProviderInterface
 
     public function redirect(): RedirectResponse;
 
-    public function callback(): ProviderUser;
+    public function callback(): Account;
 
-    public function refresh(Account $account);
-
-    public function createAccount(ProviderUser $providerUser): Account;
-
-    public function refreshAccount(Account $account, ProviderUser $providerUser): void;
+    public function refresh(Account $account): void;
 }

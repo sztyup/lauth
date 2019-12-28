@@ -9,6 +9,7 @@ use Illuminate\Contracts\Config\Repository;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Contracts\Events\Dispatcher;
+use Illuminate\Support\Collection;
 use Sztyup\LAuth\Entities\Account;
 use Sztyup\LAuth\Entities\User;
 use Sztyup\LAuth\Events\Login;
@@ -31,6 +32,9 @@ class LAuth
     /** @var Repository */
     protected $config;
 
+    /** @var Collection */
+    protected $providers;
+
     public function __construct(
         Container $container,
         EntityManager $em,
@@ -43,21 +47,29 @@ class LAuth
         $this->manager = $manager;
         $this->dispatcher = $dispatcher;
         $this->config = $config;
+        $this->providers = Collection::make();
+    }
+
+    public function addProvider(string $name, string $class)
+    {
+        $this->providers[$name] = $class;
+
+        return $this;
     }
 
     /**
      * @throws ProviderNotFound
      */
-    public function buidProvider(string $provider): AbstractProvider
+    protected function buildProvider(string $provider): AbstractProvider
     {
-        $config = $this->config->get("lauth.provider.$provider");
+        $class = $this->providers[$provider] ?? null;
 
-        if ($config === null) {
+        if ($class === null) {
             throw new ProviderNotFound($provider);
         }
 
         try {
-            return $this->container->make($config['class']);
+            return $this->container->make($class);
         } catch (BindingResolutionException $exception) {
             throw new ProviderNotFound($provider);
         }
@@ -66,43 +78,37 @@ class LAuth
     /**
      * @throws ProviderNotFound
      */
+    public function redirectToProvider(string $providerName)
+    {
+        $provider = $this->buildProvider($providerName);
+
+        return $provider->redirect();
+    }
+
+    /**
+     * @throws ProviderNotFound
+     * @throws Exceptions\InvalidStateException
+     */
     public function handleProviderCallback(string $providerName): User
     {
-        $provider = $this->buidProvider($providerName);
+        $provider = $this->buildProvider($providerName);
 
-        $providerUser = $provider->callback();
+        $account = $provider->callback();
 
-        $account = $this->getAccountFromProviderUser($provider, $providerUser);
-
-        $user = $this->getUserFromAccount($account, $providerUser);
+        $user = $this->getUserFromAccount($account);
 
         $this->em->flush();
 
         $this->manager->guard()->login($user);
 
         $this->dispatcher->dispatch(
-            new Login($user, $providerUser)
+            new Login($user)
         );
 
         return $user;
     }
 
-    protected function getAccountFromProviderUser(ProviderInterface $provider, ProviderUser $user): Account
-    {
-        /** @var Account $account */
-        $account = $this->em->getRepository(Account::class)->findOneBy([
-            'providerUserId' => $user->providerId,
-            'provider' => $provider->getName()
-        ]);
-
-        if ($account === null) {
-            $account = $provider->createAccount($user);
-        }
-
-        return $account;
-    }
-
-    protected function getUserFromAccount(Account $socialAccount, ProviderUser $providerUser): User
+    protected function getUserFromAccount(Account $socialAccount): User
     {
         // User already associated
         if ($socialAccount->getUser() !== null) {
@@ -115,8 +121,8 @@ class LAuth
         /** @var User $user */
         $user = new $userClass();
         $user
-            ->setName($providerUser->name)
-            ->setEmail($providerUser->email)
+            ->setName($socialAccount->getName())
+            ->setEmail($socialAccount->getEmail())
         ;
 
         $this->em->persist($user);
@@ -124,5 +130,10 @@ class LAuth
         $socialAccount->setUser($user);
 
         return $user;
+    }
+
+    public function getUser(): ?UserInterface
+    {
+        return $this->manager->guard()->user();
     }
 }

@@ -45,6 +45,20 @@ abstract class Account
      */
     protected $refreshToken;
 
+    /**
+     * @var string
+     *
+     * @ORM\Column(type="string")
+     */
+    protected $name;
+
+    /**
+     * @var string
+     *
+     * @ORM\Column(type="string")
+     */
+    protected $email;
+
     public function getUser(): ?User
     {
         return $this->user;
@@ -89,6 +103,30 @@ abstract class Account
     public function setRefreshToken(string $refreshToken): Account
     {
         $this->refreshToken = $refreshToken;
+
+        return $this;
+    }
+
+    public function getName(): string
+    {
+        return $this->name;
+    }
+
+    public function setName(string $name): Account
+    {
+        $this->name = $name;
+
+        return $this;
+    }
+
+    public function getEmail(): string
+    {
+        return $this->email;
+    }
+
+    public function setEmail(string $email): Account
+    {
+        $this->email = $email;
 
         return $this;
     }

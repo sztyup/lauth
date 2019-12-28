@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace Sztyup\LAuth;
 
-use Doctrine\Common\Persistence\ObjectRepository;
+use Doctrine\ORM\EntityManager;
 use GuzzleHttp\Client;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -20,30 +20,75 @@ abstract class AbstractProvider implements ProviderInterface
     /** @var Client */
     protected $guzzle;
 
-    /** @var string */
-    protected $clientId;
-
-    /** @var string */
-    protected $clientSecret;
-
-    /** @var string */
-    protected $redirectUrl;
-
-    /** @var string */
-    protected $tokenUrl;
+    /** @var EntityManager */
+    protected $em;
 
     /** @var array */
-    protected $scopes = [];
+    protected $config;
 
-    public function __construct(Client $guzzle, array $config)
+    public function __construct(Request $request, Client $guzzle, EntityManager $em, array $config)
     {
-        $this->guzzle = $guzzle;
-        $this->clientId = Arr::get($config, 'client_id');
-        $this->clientSecret = Arr::get($config, 'client_secret');
-        $this->redirectUrl = Arr::get($config, 'redirect_url');
-        $this->tokenUrl = Arr::get($config, 'token_url');
-        $this->scopes = Arr::get($config, 'scopes');
+        $this->request = $request;
+        $this->guzzle  = $guzzle;
+        $this->em      = $em;
+        $this->config  = $config;
     }
+
+    public function redirect(): RedirectResponse
+    {
+        $state = Str::random(32);
+
+        $this->request->session()->put('state', $state);
+
+        return RedirectResponse::create($this->redirectUrl($state));
+    }
+
+    /**
+     * @throws InvalidStateException
+     */
+    public function callback(): Account
+    {
+        $this->checkState();
+
+        $tokens = $this->getAccessTokenFromCode($this->request->query->get('code'));
+
+        $providerUser = $this->getUserFromResponse(
+            $this->getResponseFromToken($tokens->accessToken)
+        );
+
+        $account = $this->matchExistingAccount($providerUser);
+
+        if ($account === null) {
+            $account = $this->createAccount($providerUser);
+        } else {
+            $this->updateAccount($account, $providerUser);
+        }
+
+        $this->em->flush();
+
+        return $account;
+    }
+
+    public function refresh(Account $account): void
+    {
+        $providerUser = $this->getUserFromResponse(
+            $this->getResponseFromToken($account->getAccessToken())
+        );
+
+        $this->updateAccount($account, $providerUser);
+    }
+
+    protected function matchExistingAccount(ProviderUser $providerUser): ?Account
+    {
+        return $this->em->getRepository(Account::class)->findOneBy([
+            'providerUserId' => $providerUser->providerId,
+            'provider' => $this->getName()
+        ]);
+    }
+
+    abstract protected function createAccount(ProviderUser $providerUser): Account;
+
+    abstract protected function updateAccount(Account $account, ProviderUser $providerUser): void;
 
     abstract protected function redirectUrl(string $state): string;
 
@@ -62,13 +107,13 @@ abstract class AbstractProvider implements ProviderInterface
 
     protected function getAccessTokenFromCode(string $code): TokenResponse
     {
-        $response = $this->guzzle->post($this->tokenUrl, [
+        $response = $this->guzzle->post($this->config['token_url'], [
             'headers' => ['Accept' => 'application/json'],
             'form_params' => [
-                'client_id' => $this->clientId,
-                'client_secret' => $this->clientSecret,
+                'client_id' => $this->config['client_id'],
+                'client_secret' => $this->config['client_secret'],
                 'code' => $code,
-                'redirect_uri' => $this->redirectUrl,
+                'redirect_uri' => $this->config['redirect_url'],
             ]
         ]);
 
@@ -82,44 +127,17 @@ abstract class AbstractProvider implements ProviderInterface
         return $return;
     }
 
-    abstract protected function getUserFromResponse(array $response): ProviderUser;
+    protected function getUserFromResponse(array $response): ProviderUser
+    {
+        $user = new ProviderUser();
+
+        $user->providerId = $response['id'];
+        $user->name = $response['name'];
+        $user->email = $response['email'];
+        $user->data = $response;
+
+        return $user;
+    }
 
     abstract protected function getResponseFromToken(string $accessToken): array;
-
-    public function redirect(): RedirectResponse
-    {
-        $state = Str::random(32);
-
-        $this->request->session()->put('state', $state);
-
-        return RedirectResponse::create($this->redirectUrl($state));
-    }
-
-    /**
-     * @throws InvalidStateException
-     */
-    public function callback(): ProviderUser
-    {
-        $this->checkState();
-
-        $tokens = $this->getAccessTokenFromCode($this->request->query->get('code'));
-
-        return $this->getUserFromResponse(
-            $this->getResponseFromToken($tokens->accessToken)
-        );
-    }
-
-    public function refresh(Account $account): ProviderUser
-    {
-        return $this->getUserFromResponse(
-            $this->getResponseFromToken($account->getAccessToken())
-        );
-    }
-
-    public function matchLocalAccount(ObjectRepository $repository, ProviderUser $providerUser)
-    {
-        return $repository->findOneBy([
-            'email' => $providerUser->email
-        ]);
-    }
 }
