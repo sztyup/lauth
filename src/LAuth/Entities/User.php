@@ -49,7 +49,7 @@ class User implements UserInterface
     /**
      * @var Account[]|ArrayCollection
      *
-     * @ORM\OneToMany(targetEntity="Account", mappedBy="user")
+     * @ORM\OneToMany(targetEntity="Sztyup\LAuth\Entities\Account", mappedBy="user")
      */
     protected $accounts;
 

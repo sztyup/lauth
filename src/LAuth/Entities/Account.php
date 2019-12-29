@@ -18,9 +18,18 @@ use Doctrine\ORM\Mapping as ORM;
 abstract class Account
 {
     /**
+     * @var int
+     *
+     * @ORM\Column(type="integer")
+     * @ORM\Id
+     * @ORM\GeneratedValue(strategy="IDENTITY")
+     */
+    protected $id;
+
+    /**
      * @var User
      *
-     * @ORM\ManyToOne(targetEntity="User", inversedBy="accounts")
+     * @ORM\ManyToOne(targetEntity="Sztyup\LAuth\Entities\User", inversedBy="accounts")
      */
     protected $user;
 
