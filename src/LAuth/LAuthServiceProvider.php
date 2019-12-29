@@ -12,6 +12,8 @@ class LAuthServiceProvider extends ServiceProvider
     {
         parent::register();
 
+        $this->app->singleton(LAuth::class);
+
         $this->mergeConfigFrom(
             __DIR__ . '/../config/lauth.php',
             'lauth'
