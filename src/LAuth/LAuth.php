@@ -69,9 +69,11 @@ class LAuth
         }
 
         try {
-            return $this->container->make($class);
+            return $this->container->make($class, [
+                'config' => $this->config->get('providers' . $provider, [])
+            ]);
         } catch (BindingResolutionException $exception) {
-            throw new ProviderNotFound($provider);
+            throw new ProviderNotFound($provider, $exception);
         }
     }
 
