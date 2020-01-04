@@ -6,20 +6,13 @@ namespace Sztyup\LAuth;
 use Doctrine\ORM\EntityManager;
 use Illuminate\Auth\AuthManager;
 use Illuminate\Contracts\Config\Repository;
-use Illuminate\Contracts\Container\BindingResolutionException;
-use Illuminate\Contracts\Container\Container;
 use Illuminate\Contracts\Events\Dispatcher;
-use Illuminate\Support\Collection;
 use Sztyup\LAuth\Entities\Account;
 use Sztyup\LAuth\Entities\User;
 use Sztyup\LAuth\Events\Login;
-use Sztyup\LAuth\Exceptions\ProviderNotFound;
 
 class LAuth
 {
-    /** @var Container */
-    protected $container;
-
     /** @var EntityManager */
     protected $em;
 
@@ -32,68 +25,36 @@ class LAuth
     /** @var Repository */
     protected $config;
 
-    /** @var Collection */
-    protected $providers;
+    /** @var ProviderRegistry */
+    protected $providerRegistry;
 
     public function __construct(
-        Container $container,
         EntityManager $em,
         AuthManager $manager,
         Dispatcher $dispatcher,
-        Repository $config
+        Repository $config,
+        ProviderRegistry $providerRegistry
     ) {
-        $this->container = $container;
         $this->em = $em;
         $this->manager = $manager;
         $this->dispatcher = $dispatcher;
         $this->config = $config;
-        $this->providers = Collection::make();
+        $this->providerRegistry = $providerRegistry;
     }
 
-    public function addProvider(string $name, string $class)
-    {
-        $this->providers[$name] = $class;
-
-        return $this;
-    }
-
-    /**
-     * @throws ProviderNotFound
-     */
-    protected function buildProvider(string $provider): AbstractProvider
-    {
-        $class = $this->providers[$provider] ?? null;
-
-        if ($class === null) {
-            throw new ProviderNotFound($provider);
-        }
-
-        try {
-            return $this->container->make($class, [
-                'config' => $this->config->get('providers' . $provider, [])
-            ]);
-        } catch (BindingResolutionException $exception) {
-            throw new ProviderNotFound($provider, $exception);
-        }
-    }
-
-    /**
-     * @throws ProviderNotFound
-     */
     public function redirectToProvider(string $providerName)
     {
-        $provider = $this->buildProvider($providerName);
+        $provider = $this->providerRegistry->getProvider($providerName);
 
         return $provider->redirect();
     }
 
     /**
-     * @throws ProviderNotFound
      * @throws Exceptions\InvalidStateException
      */
     public function handleProviderCallback(string $providerName): User
     {
-        $provider = $this->buildProvider($providerName);
+        $provider = $this->providerRegistry->getProvider($providerName);
 
         $account = $provider->callback();
 
