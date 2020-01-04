@@ -50,11 +50,9 @@ abstract class AbstractProvider implements ProviderInterface
     {
         $this->checkState();
 
-        $tokens = $this->getAccessTokenFromCode($this->request->query->get('code'));
+        $tokens = $this->getTokensFromCode($this->request->query->get('code'));
 
-        $providerUser = $this->getUserFromResponse(
-            $this->getResponseFromToken($tokens->accessToken)
-        );
+        $providerUser = $this->getUserByAccessToken($tokens->accessToken);
 
         $account = $this->matchExistingAccount($providerUser);
 
@@ -71,19 +69,33 @@ abstract class AbstractProvider implements ProviderInterface
 
     public function refresh(Account $account): void
     {
-        $providerUser = $this->getUserFromResponse(
-            $this->getResponseFromToken($account->getAccessToken())
-        );
+        $tokens = $this->getTokensFromCode($account->getAccessToken());
+
+        $providerUser = $this->getUserByAccessToken($tokens->accessToken);
 
         $this->updateAccount($account, $providerUser);
     }
 
     protected function matchExistingAccount(ProviderUser $providerUser): ?Account
     {
-        return $this->em->getRepository(Account::class)->findOneBy([
-            'providerUserId' => $providerUser->providerId,
-            'provider' => $this->getName()
-        ]);
+        $query = sprintf(
+            'SELECT acc FROM %s acc WHERE acc INSTANCE OF %s AND acc.providerUserId=:userId',
+            Account::class,
+            static::getAccountEntity()
+        );
+
+        $result = $this
+            ->em
+            ->createQuery($query)
+            ->setParameter('userId', $providerUser->providerId)
+            ->execute()
+        ;
+
+        if (empty($result)) {
+            return null;
+        }
+
+        return $result[0];
     }
 
     abstract protected function createAccount(ProviderUser $providerUser): Account;
@@ -105,7 +117,7 @@ abstract class AbstractProvider implements ProviderInterface
         }
     }
 
-    protected function getAccessTokenFromCode(string $code): TokenResponse
+    protected function getTokensFromCode(string $code): TokenResponse
     {
         $response = $this->guzzle->post($this->config['token_url'], [
             'headers' => ['Accept' => 'application/json'],
@@ -127,17 +139,5 @@ abstract class AbstractProvider implements ProviderInterface
         return $return;
     }
 
-    protected function getUserFromResponse(array $response): ProviderUser
-    {
-        $user = new ProviderUser();
-
-        $user->providerId = $response['id'];
-        $user->name = $response['name'];
-        $user->email = $response['email'];
-        $user->data = $response;
-
-        return $user;
-    }
-
-    abstract protected function getResponseFromToken(string $accessToken): array;
+    abstract protected function getUserByAccessToken(string $accessToken): ProviderUser;
 }
