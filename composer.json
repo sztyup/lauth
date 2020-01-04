@@ -9,7 +9,7 @@
   "require": {
     "php": ">=7.2",
     "ext-json": "*",
-    "guzzlehttp/guzzle": "6.3.*",
+    "guzzlehttp/guzzle": "^6.3",
     "illuminate/support": "^6.9",
     "illuminate/contracts": "^6.9",
     "laravel-doctrine/orm": "^1.5"
