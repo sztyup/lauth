@@ -10,6 +10,7 @@ use Illuminate\Contracts\Events\Dispatcher;
 use Sztyup\LAuth\Entities\Account;
 use Sztyup\LAuth\Entities\User;
 use Sztyup\LAuth\Events\Login;
+use function get_class;
 
 class LAuth
 {
@@ -69,6 +70,16 @@ class LAuth
         );
 
         return $user;
+    }
+
+    public function refreshAccount(Account $account): void
+    {
+        $map = $this->em->getClassMetadata(Account::class)->discriminatorMap;
+        $providerName = array_search(get_class($account), $map, true);
+
+        $provider = $this->providerRegistry->getProvider($providerName);
+
+        $provider->refresh($account);
     }
 
     protected function getUserFromAccount(Account $socialAccount): User
