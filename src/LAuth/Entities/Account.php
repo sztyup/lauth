@@ -3,11 +3,12 @@ declare(strict_types=1);
 
 namespace Sztyup\LAuth\Entities;
 
+use DateTime;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
  * @ORM\Entity()
- * @ORM\Table(indexes={
+ * @ORM\Table(name="lauth_accounts", indexes={
  *      @ORM\Index(columns={"user_id"}),
  *      @ORM\Index(columns={"provider_user_id"}),
  *      @ORM\Index(columns={"provider"}),
@@ -67,6 +68,20 @@ abstract class Account
      * @ORM\Column(type="string")
      */
     protected $email;
+
+    /**
+     * @var DateTime
+     *
+     * @ORM\Column(type="datetime")
+     */
+    protected $lastSignedIn;
+
+    /**
+     * @var DateTime
+     *
+     * @ORM\Column(type="datetime")
+     */
+    protected $createdAt;
 
     public function getUser(): ?User
     {
@@ -138,5 +153,29 @@ abstract class Account
         $this->email = $email;
 
         return $this;
+    }
+
+    public function setLastSignedIn(DateTime $lastSignedIn): Account
+    {
+        $this->lastSignedIn = $lastSignedIn;
+
+        return $this;
+    }
+
+    public function getLastSignedIn(): DateTime
+    {
+        return $this->lastSignedIn;
+    }
+
+    public function setCreatedAt(DateTime $createdAt): Account
+    {
+        $this->createdAt = $createdAt;
+
+        return $this;
+    }
+
+    public function getCreatedAt(): DateTime
+    {
+        return $this->createdAt;
     }
 }

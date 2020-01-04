@@ -7,6 +7,9 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
 use Sztyup\LAuth\UserInterface;
 
+/**
+ * @ORM\MappedSuperclass
+ */
 class User implements UserInterface
 {
     /**
