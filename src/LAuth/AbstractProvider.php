@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Sztyup\LAuth;
 
+use DateTime;
 use Doctrine\ORM\EntityManager;
 use GuzzleHttp\Client;
 use Illuminate\Http\RedirectResponse;
@@ -58,8 +59,10 @@ abstract class AbstractProvider implements ProviderInterface
 
         if ($account === null) {
             $account = $this->createAccount($providerUser);
+            $account->setCreatedAt(new DateTime());
         } else {
             $this->updateAccount($account, $providerUser);
+            $account->setUpdatedAt(new DateTime());
         }
 
         $this->em->flush();
@@ -74,6 +77,10 @@ abstract class AbstractProvider implements ProviderInterface
         $providerUser = $this->getUserByAccessToken($tokens->accessToken);
 
         $this->updateAccount($account, $providerUser);
+
+        $account->setUpdatedAt(new DateTime());
+
+        $this->em->flush();
     }
 
     protected function matchExistingAccount(ProviderUser $providerUser): ?Account

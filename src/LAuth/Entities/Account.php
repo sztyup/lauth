@@ -83,6 +83,13 @@ abstract class Account
      */
     protected $createdAt;
 
+    /**
+     * @var DateTime
+     *
+     * @ORM\Column(type="datetime")
+     */
+    protected $updatedAt;
+
     public function getUser(): ?User
     {
         return $this->user;
@@ -177,5 +184,17 @@ abstract class Account
     public function getCreatedAt(): DateTime
     {
         return $this->createdAt;
+    }
+
+    public function setUpdatedAt(DateTime $updatedAt): Account
+    {
+        $this->updatedAt = $updatedAt;
+
+        return $this;
+    }
+
+    public function getUpdatedAt(): DateTime
+    {
+        return $this->updatedAt;
     }
 }
