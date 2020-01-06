@@ -80,7 +80,7 @@ abstract class AbstractProvider implements ProviderInterface
 
         $this->em->flush();
 
-        if (!$this->dispatcher->until(new ProviderLogin($providerUser, $account))) {
+        if ($this->dispatcher->until(new ProviderLogin($providerUser, $account)) === false) {
             return null;
         }
 
