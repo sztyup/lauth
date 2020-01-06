@@ -65,6 +65,8 @@ abstract class AbstractProvider implements ProviderInterface
             $account->setUpdatedAt(new DateTime());
         }
 
+        $account->setLastSignedIn(new DateTime());
+
         $this->em->flush();
 
         return $account;
