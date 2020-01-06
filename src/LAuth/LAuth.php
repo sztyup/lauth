@@ -91,7 +91,16 @@ class LAuth
 
         // Create user if there are none
 
-        $userClass = $this->config->get('user.class');
+        $userClass = $this->config->get('lauth.user_class');
+
+        $existing = $this->em->getRepository($userClass)->findOneBy([
+            'email' => $socialAccount->getEmail()
+        ]);
+
+        if ($existing) {
+            return $existing;
+        }
+
         /** @var User $user */
         $user = new $userClass();
         $user
