@@ -58,10 +58,10 @@ abstract class AbstractProvider implements ProviderInterface
         $account = $this->matchExistingAccount($providerUser);
 
         if ($account === null) {
-            $account = $this->createAccount($providerUser);
+            $account = $this->createAccount($providerUser, $tokens);
             $account->setCreatedAt(new DateTime());
         } else {
-            $this->updateAccount($account, $providerUser);
+            $this->updateAccount($account, $providerUser, $tokens);
             $account->setUpdatedAt(new DateTime());
         }
 
@@ -76,7 +76,7 @@ abstract class AbstractProvider implements ProviderInterface
 
         $providerUser = $this->getUserByAccessToken($tokens->accessToken);
 
-        $this->updateAccount($account, $providerUser);
+        $this->updateAccount($account, $providerUser, $tokens);
 
         $account->setUpdatedAt(new DateTime());
 
@@ -105,9 +105,9 @@ abstract class AbstractProvider implements ProviderInterface
         return $result[0];
     }
 
-    abstract protected function createAccount(ProviderUser $providerUser): Account;
+    abstract protected function createAccount(ProviderUser $providerUser, TokenResponse $tokens): Account;
 
-    abstract protected function updateAccount(Account $account, ProviderUser $providerUser): void;
+    abstract protected function updateAccount(Account $account, ProviderUser $providerUser, TokenResponse $tokens): void;
 
     abstract protected function redirectUrl(string $state): string;
 
