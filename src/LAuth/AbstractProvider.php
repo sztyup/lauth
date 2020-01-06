@@ -58,7 +58,7 @@ abstract class AbstractProvider implements ProviderInterface
     /**
      * @throws InvalidStateException
      */
-    public function callback(): Account
+    public function callback(): ?Account
     {
         $this->checkState();
 

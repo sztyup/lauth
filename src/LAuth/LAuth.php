@@ -53,11 +53,15 @@ class LAuth
     /**
      * @throws Exceptions\InvalidStateException
      */
-    public function handleProviderCallback(string $providerName): User
+    public function handleProviderCallback(string $providerName): ?User
     {
         $provider = $this->providerRegistry->getProvider($providerName);
 
         $account = $provider->callback();
+
+        if ($account === null) {
+            return null;
+        }
 
         $user = $this->getUserFromAccount($account);
 

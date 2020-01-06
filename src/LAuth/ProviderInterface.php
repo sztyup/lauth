@@ -12,7 +12,7 @@ interface ProviderInterface
 
     public function redirect(): RedirectResponse;
 
-    public function callback(): Account;
+    public function callback(): ?Account;
 
     public function refresh(Account $account): void;
 
