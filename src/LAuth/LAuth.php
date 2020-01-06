@@ -102,6 +102,8 @@ class LAuth
         ]);
 
         if ($existing) {
+            $socialAccount->setUser($existing);
+
             return $existing;
         }
 
