@@ -6,11 +6,13 @@ namespace Sztyup\LAuth;
 use DateTime;
 use Doctrine\ORM\EntityManager;
 use GuzzleHttp\Client;
+use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use Sztyup\LAuth\Entities\Account;
+use Sztyup\LAuth\Events\ProviderLogin;
 use Sztyup\LAuth\Exceptions\InvalidStateException;
 
 abstract class AbstractProvider implements ProviderInterface
@@ -24,15 +26,24 @@ abstract class AbstractProvider implements ProviderInterface
     /** @var EntityManager */
     protected $em;
 
+    /** @var Dispatcher */
+    protected $dispatcher;
+
     /** @var array */
     protected $config;
 
-    public function __construct(Request $request, Client $guzzle, EntityManager $em, array $config)
-    {
-        $this->request = $request;
-        $this->guzzle  = $guzzle;
-        $this->em      = $em;
-        $this->config  = $config;
+    public function __construct(
+        Request $request,
+        Client $guzzle,
+        EntityManager $em,
+        Dispatcher $dispatcher,
+        array $config
+    ) {
+        $this->request    = $request;
+        $this->guzzle     = $guzzle;
+        $this->em         = $em;
+        $this->dispatcher = $dispatcher;
+        $this->config     = $config;
     }
 
     public function redirect(): RedirectResponse
@@ -68,6 +79,10 @@ abstract class AbstractProvider implements ProviderInterface
         $account->setLastSignedIn(new DateTime());
 
         $this->em->flush();
+
+        if (!$this->dispatcher->until(new ProviderLogin($providerUser, $account))) {
+            return null;
+        }
 
         return $account;
     }
