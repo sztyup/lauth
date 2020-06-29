@@ -14,7 +14,7 @@ interface ProviderInterface
 
     public function callback(): ?Account;
 
-    public function refresh(Account $account): void;
+    public function refresh(Account $account): Account;
 
     public static function getEntitiesPath(): string;
 

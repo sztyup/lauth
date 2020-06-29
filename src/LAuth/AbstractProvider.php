@@ -87,7 +87,7 @@ abstract class AbstractProvider implements ProviderInterface
         return $account;
     }
 
-    public function refresh(Account $account): void
+    public function refresh(Account $account): Account
     {
         $tokens = $this->getTokensFromCode($account->getAccessToken());
 
@@ -98,6 +98,8 @@ abstract class AbstractProvider implements ProviderInterface
         $account->setUpdatedAt(new DateTime());
 
         $this->em->flush();
+
+        return $account;
     }
 
     protected function matchExistingAccount(ProviderUser $providerUser): ?Account
