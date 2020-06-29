@@ -1,3 +1,3 @@
 #LAuth
 
-Laravel auth system built on top of Socialite
+Laravel auth system
