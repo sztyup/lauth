@@ -99,6 +99,8 @@ abstract class AbstractProvider implements ProviderInterface
 
         $this->em->flush();
 
+        $this->dispatcher->dispatch(new ProviderLogin($providerUser, $account));
+
         return $account;
     }
 
