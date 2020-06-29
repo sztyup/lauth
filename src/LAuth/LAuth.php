@@ -119,6 +119,8 @@ class LAuth
 
         $socialAccount->setUser($user);
 
+        $this->refreshAccount($socialAccount);
+
         return $user;
     }
 
