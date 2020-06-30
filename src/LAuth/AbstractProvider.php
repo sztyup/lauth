@@ -89,9 +89,7 @@ abstract class AbstractProvider implements ProviderInterface
 
     public function refresh(Account $account): Account
     {
-        $tokens = $this->getTokensFromCode($account->getAccessToken());
-
-        $providerUser = $this->getUserByAccessToken($tokens->accessToken);
+        $providerUser = $this->getUserByAccessToken($account->getAccessToken());
 
         $this->updateAccount($account, $providerUser, $tokens);
 
