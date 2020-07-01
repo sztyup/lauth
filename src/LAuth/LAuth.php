@@ -51,9 +51,6 @@ class LAuth
         return $provider->redirect();
     }
 
-    /**
-     * @throws Exceptions\InvalidStateException
-     */
     public function handleProviderCallback(string $providerName): ?User
     {
         $provider = $this->providerRegistry->getProvider($providerName);

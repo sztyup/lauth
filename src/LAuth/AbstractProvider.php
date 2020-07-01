@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Sztyup\LAuth;
@@ -11,8 +12,10 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
+use Psr\Http\Message\MessageInterface;
 use Sztyup\LAuth\Entities\Account;
 use Sztyup\LAuth\Events\ProviderLogin;
+use Sztyup\LAuth\Events\ProviderUpdate;
 use Sztyup\LAuth\Exceptions\InvalidStateException;
 
 abstract class AbstractProvider implements ProviderInterface
@@ -80,26 +83,28 @@ abstract class AbstractProvider implements ProviderInterface
 
         $this->em->flush();
 
-        if ($this->dispatcher->until(new ProviderLogin($providerUser, $account)) === false) {
-            return null;
-        }
+        $this->dispatcher->dispatch(new ProviderLogin($providerUser, $account));
 
         return $account;
     }
 
     public function refresh(Account $account): Account
     {
-        $tokens = $this->getTokensFromCode($account->getAccessToken());
+        if ($account->getRefreshToken() !== null) {
+            $tokenResponse = $this->getTokensFromRefreshToken($account->getRefreshToken());
+        } else {
+            $tokenResponse = null;
+        }
 
-        $providerUser = $this->getUserByAccessToken($tokens->accessToken);
+        $providerUser = $this->getUserByAccessToken($tokenResponse->accessToken);
 
-        $this->updateAccount($account, $providerUser, $tokens);
+        $this->updateAccount($account, $providerUser, $tokenResponse);
 
         $account->setUpdatedAt(new DateTime());
 
         $this->em->flush();
 
-        $this->dispatcher->dispatch(new ProviderLogin($providerUser, $account));
+        $this->dispatcher->dispatch(new ProviderUpdate($providerUser, $account));
 
         return $account;
     }
@@ -128,7 +133,11 @@ abstract class AbstractProvider implements ProviderInterface
 
     abstract protected function createAccount(ProviderUser $providerUser, TokenResponse $tokens): Account;
 
-    abstract protected function updateAccount(Account $account, ProviderUser $providerUser, TokenResponse $tokens): void;
+    abstract protected function updateAccount(
+        Account $account,
+        ProviderUser $providerUser,
+        ?TokenResponse $tokens
+    ): void;
 
     abstract protected function redirectUrl(string $state): string;
 
@@ -138,7 +147,7 @@ abstract class AbstractProvider implements ProviderInterface
     protected function checkState(): void
     {
         $expected = $this->request->session()->pull('state');
-        $given = $this->request->query->get('state');
+        $given    = $this->request->query->get('state');
 
         if ($expected !== $given) {
             throw new InvalidStateException($expected, $given);
@@ -147,24 +156,50 @@ abstract class AbstractProvider implements ProviderInterface
 
     protected function getTokensFromCode(string $code): TokenResponse
     {
-        $response = $this->guzzle->post($this->config['token_url'], [
-            'headers' => ['Accept' => 'application/json'],
-            'form_params' => [
-                'client_id' => $this->config['client_id'],
-                'client_secret' => $this->config['client_secret'],
-                'code' => $code,
-                'redirect_uri' => $this->config['redirect_url'],
+        $response = $this->guzzle->post(
+            $this->config['token_url'],
+            [
+                'headers'     => ['Accept' => 'application/json'],
+                'form_params' => [
+                    'client_id'     => $this->config['client_id'],
+                    'client_secret' => $this->config['client_secret'],
+                    'code'          => $code,
+                    'redirect_uri'  => $this->config['redirect_url'],
+                ]
             ]
-        ]);
+        );
 
-        $response = json_decode($response->getBody(), true);
+        return $this->parseTokenResponse($response);
+    }
 
-        $return = new TokenResponse();
-        $return->accessToken = Arr::get($response, 'access_token');
-        $return->refreshToken = Arr::get($response, 'refresh_token');
-        $return->accessTokenExpiration = Arr::get($response, 'expires_in');
+    protected function getTokensFromRefreshToken(string $refreshToken): TokenResponse
+    {
+        $response = $this->guzzle->post(
+            $this->config['token_url'],
+            [
+                'headers'     => ['Accept' => 'application/json'],
+                'form_params' => [
+                    'grant_type'    => 'refresh_token',
+                    'refresh_token' => $refreshToken,
+                    'client_id'     => $this->config['client_id'],
+                    'client_secret' => $this->config['client_secret'],
+                ]
+            ]
+        );
 
-        return $return;
+        return $this->parseTokenResponse($response);
+    }
+
+    protected function parseTokenResponse(MessageInterface $response): TokenResponse
+    {
+        $response = json_decode($response->getBody()->getContents(), true);
+
+        $tokenResponse                        = new TokenResponse();
+        $tokenResponse->accessToken           = Arr::get($response, 'access_token');
+        $tokenResponse->refreshToken          = Arr::get($response, 'refresh_token');
+        $tokenResponse->accessTokenExpiration = Arr::get($response, 'expires_in');
+
+        return $tokenResponse;
     }
 
     abstract protected function getUserByAccessToken(string $accessToken): ProviderUser;

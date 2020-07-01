@@ -54,6 +54,7 @@ class ProviderRegistry
 
     protected function baseAccount(ClassMetadata $metadata): void
     {
+        $metadata->discriminatorMap = []; // Delete auto generated map
         foreach ($this->providers as $name => $class) {
             $metadata->addDiscriminatorMapClass($name, $class::getAccountEntity());
         }

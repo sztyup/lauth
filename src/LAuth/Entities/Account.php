@@ -126,7 +126,7 @@ abstract class Account
         return $this;
     }
 
-    public function getRefreshToken(): string
+    public function getRefreshToken(): ?string
     {
         return $this->refreshToken;
     }
