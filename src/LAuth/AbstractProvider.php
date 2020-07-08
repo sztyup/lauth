@@ -7,6 +7,7 @@ namespace Sztyup\LAuth;
 use DateTime;
 use Doctrine\ORM\EntityManager;
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\RequestException;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -61,13 +62,13 @@ abstract class AbstractProvider implements ProviderInterface
     /**
      * @throws InvalidStateException
      */
-    public function callback(): ?Account
+    public function callback(bool $forceRefresh = false): ?Account
     {
         $this->checkState();
 
         $tokens = $this->getTokensFromCode($this->request->query->get('code'));
 
-        $providerUser = $this->getUserByAccessToken($tokens->accessToken);
+        $providerUser = $this->getUserByAccessToken($tokens->accessToken, $forceRefresh);
 
         $account = $this->matchExistingAccount($providerUser);
 
@@ -88,17 +89,11 @@ abstract class AbstractProvider implements ProviderInterface
         return $account;
     }
 
-    public function refresh(Account $account): Account
+    public function refresh(Account $account, bool $forceRefresh = false): Account
     {
-        if ($account->getRefreshToken() !== null) {
-            $tokenResponse = $this->getTokensFromRefreshToken($account->getRefreshToken());
-        } else {
-            $tokenResponse = null;
-        }
+        $providerUser = $this->getProviderUser($account);
 
-        $providerUser = $this->getUserByAccessToken($tokenResponse->accessToken);
-
-        $this->updateAccount($account, $providerUser, $tokenResponse);
+        $this->updateAccount($account, $providerUser, null);
 
         $account->setUpdatedAt(new DateTime());
 
@@ -107,6 +102,36 @@ abstract class AbstractProvider implements ProviderInterface
         $this->dispatcher->dispatch(new ProviderUpdate($providerUser, $account));
 
         return $account;
+    }
+
+    public function getProviderUser(Account $account, bool $forceRefresh = false): ProviderUser
+    {
+        try {
+            return $this->getUserByAccessToken($account->getAccessToken(), $forceRefresh);
+        } catch (RequestException $exception) {
+            if ($exception->getResponse() && $exception->getResponse()->getStatusCode() === 401) {
+                $this->refreshTokens($account);
+
+                return $this->getUserByAccessToken($account->getAccessToken(), $forceRefresh);
+            }
+
+            throw $exception;
+        }
+    }
+
+    protected function refreshTokens(Account $account): void
+    {
+        if ($account->getRefreshToken() !== null) {
+            $tokenResponse = $this->getTokensFromRefreshToken($account->getRefreshToken());
+
+            if ($tokenResponse->accessToken !== null) {
+                $account->setAccessToken($tokenResponse->accessToken);
+            }
+
+            if ($tokenResponse->refreshToken !== null) {
+                $account->setRefreshToken($tokenResponse->refreshToken);
+            }
+        }
     }
 
     protected function matchExistingAccount(ProviderUser $providerUser): ?Account
@@ -202,5 +227,5 @@ abstract class AbstractProvider implements ProviderInterface
         return $tokenResponse;
     }
 
-    abstract protected function getUserByAccessToken(string $accessToken): ProviderUser;
+    abstract protected function getUserByAccessToken(string $accessToken, bool $forceRefresh = false): ProviderUser;
 }

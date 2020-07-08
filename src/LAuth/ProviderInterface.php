@@ -12,9 +12,11 @@ interface ProviderInterface
 
     public function redirect(): RedirectResponse;
 
-    public function callback(): ?Account;
+    public function callback(bool $forceRefresh = false): ?Account;
 
-    public function refresh(Account $account): Account;
+    public function refresh(Account $account, bool $forceRefresh = false): Account;
+
+    public function getProviderUser(Account $account, bool $forceRefresh = false): ProviderUser;
 
     public static function getEntitiesPath(): string;
 

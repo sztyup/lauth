@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Sztyup\LAuth;
@@ -37,10 +38,10 @@ class LAuth
         Repository $config,
         ProviderRegistry $providerRegistry
     ) {
-        $this->em = $em;
-        $this->manager = $manager;
-        $this->dispatcher = $dispatcher;
-        $this->config = $config;
+        $this->em               = $em;
+        $this->manager          = $manager;
+        $this->dispatcher       = $dispatcher;
+        $this->config           = $config;
         $this->providerRegistry = $providerRegistry;
     }
 
@@ -51,11 +52,11 @@ class LAuth
         return $provider->redirect();
     }
 
-    public function handleProviderCallback(string $providerName): ?User
+    public function handleProviderCallback(string $providerName, bool $forceRefresh = false): ?User
     {
         $provider = $this->providerRegistry->getProvider($providerName);
 
-        $account = $provider->callback();
+        $account = $provider->callback($forceRefresh);
 
         if ($account === null) {
             return null;
@@ -74,14 +75,26 @@ class LAuth
         return $user;
     }
 
-    public function refreshAccount(Account $account): Account
+    public function refreshAccount(Account $account, bool $forceRefresh = false): Account
     {
-        $map = $this->em->getClassMetadata(Account::class)->discriminatorMap;
+        $provider = $this->getProviderForAccount($account);
+
+        return $provider->refresh($account, $forceRefresh);
+    }
+
+    public function getProviderUser(Account $account, bool $forceRefresh = false): ProviderUser
+    {
+        $provider = $this->getProviderForAccount($account);
+
+        return $provider->getProviderUser($account, $forceRefresh);
+    }
+
+    protected function getProviderForAccount(Account $account): ProviderInterface
+    {
+        $map          = $this->em->getClassMetadata(Account::class)->discriminatorMap;
         $providerName = array_search(get_class($account), $map, true);
 
-        $provider = $this->providerRegistry->getProvider($providerName);
-
-        return $provider->refresh($account);
+        return $this->providerRegistry->getProvider($providerName);
     }
 
     protected function getUserFromAccount(Account $socialAccount): User
