@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Sztyup\LAuth;
@@ -19,18 +20,22 @@ class LAuthServiceProvider extends ServiceProvider
         $this->app->singleton(LAuth::class);
 
         // Hook into doctrine as early as possible
-        $this->app->booting(function (Application $application) {
-            /** @var DoctrineManager $doctrineManager */
-            $doctrineManager = $application->make(DoctrineManager::class);
+        $this->app->booting(
+            function (Application $application) {
+                /** @var DoctrineManager $doctrineManager */
+                $doctrineManager = $application->make(DoctrineManager::class);
 
-            $doctrineManager->addPaths([__DIR__ . '/Entities']);
-            $doctrineManager->extendAll(function ($conf, $conn, EventManager $eventManager) use ($application) {
-                $eventManager->addEventListener(
-                    Events::loadClassMetadata,
-                    $application->make(ProviderRegistry::class)
+                $doctrineManager->addPaths([__DIR__ . '/Entities']);
+                $doctrineManager->extendAll(
+                    function ($conf, $conn, EventManager $eventManager) use ($application) {
+                        $eventManager->addEventListener(
+                            Events::loadClassMetadata,
+                            $application->make(ProviderRegistry::class)
+                        );
+                    }
                 );
-            });
-        });
+            }
+        );
 
         $this->mergeConfigFrom(
             __DIR__ . '/../config/lauth.php',
@@ -40,8 +45,11 @@ class LAuthServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        $this->publishes([
-            __DIR__ . '/../config/lauth.php' => config_path('lauth.php'),
-        ], 'config');
+        $this->publishes(
+            [
+                __DIR__ . '/../config/lauth.php' => config_path('lauth.php'),
+            ],
+            'config'
+        );
     }
 }

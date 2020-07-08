@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Sztyup\LAuth;
@@ -26,9 +27,9 @@ class ProviderRegistry
 
     public function __construct(Container $container, DoctrineManager $doctrineManager, Repository $config)
     {
-        $this->container = $container;
+        $this->container       = $container;
         $this->doctrineManager = $doctrineManager;
-        $this->config = $config;
+        $this->config          = $config;
     }
 
     public function register(string $name, string $providerClass): void
@@ -39,9 +40,12 @@ class ProviderRegistry
 
     public function getProvider($name): ProviderInterface
     {
-        return $this->container->make($this->providers[$name], [
-            'config' => $this->config->get('lauth.providers.' . $name, [])
-        ]);
+        return $this->container->make(
+            $this->providers[$name],
+            [
+                'config' => $this->config->get('lauth.providers.' . $name, [])
+            ]
+        );
     }
 
     public function loadClassMetadata(LoadClassMetadataEventArgs $event): void
@@ -60,6 +64,7 @@ class ProviderRegistry
         }
 
         $userClass = $this->container->make(Repository::class)->get('lauth.user_class');
+
         $metadata->associationMappings['user']['targetEntity'] = $userClass;
     }
 }
